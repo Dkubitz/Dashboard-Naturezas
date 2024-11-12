@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top 10 Naturezas por Empresa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- Cabeçalho -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Top 10 Naturezas de Despesa por Empresa</h1>
+            <p class="text-gray-600">Excluindo transferências entre contas, aportes e receitas</p>
+        </div>
+
+        <!-- Seletor de Empresa -->
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <select id="empresaSelector" class="w-full p-2 border rounded" onchange="updateCharts()">
+                <option value="AGATA">Ágata</option>
+                <option value="NORTHSIDE">Northside</option>
+                <option value="BARILOCHE">Bariloche</option>
+            </select>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Gráfico de Barras -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Valores Absolutos</h2>
+                <div class="h-96">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Gráfico de Pizza -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Distribuição Percentual</h2>
+                <div class="h-96">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela Detalhada -->
+        <div class="bg-white rounded-lg shadow p-6 mt-6">
+            <h2 class="text-xl font-semibold mb-4">Detalhamento</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Natureza</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Valor</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Percentual</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dados = {
+            AGATA: [
+                { natureza: 'ASSESSORIA DE INFORMÁTICA', valor: 55645.26, percentual: 28.37 },
+                { natureza: 'EMPRÉSTIMOS (SAIDA)', valor: 50000.00, percentual: 25.49 },
+                { natureza: 'ASSESSORIA TÉCNICA', valor: 36430.00, percentual: 18.57 },
+                { natureza: 'ASSESSORIA CONTÁBIL', valor: 35972.66, percentual: 18.34 },
+                { natureza: 'TAXAS BANCÁRIAS', valor: 6670.88, percentual: 3.40 },
+                { natureza: 'TAXAS E CONTRIBUIÇÕES', valor: 4472.22, percentual: 2.28 },
+                { natureza: 'OUTRAS DESPESAS', valor: 2765.04, percentual: 1.41 },
+                { natureza: 'VIAGEM', valor: 1977.76, percentual: 1.01 },
+                { natureza: 'BENS DE PEQUENO VALOR', valor: 1220.00, percentual: 0.62 },
+                { natureza: 'ASSINATURA DIGITAL', valor: 975.69, percentual: 0.50 }
+            ],
+            NORTHSIDE: [
+                { natureza: 'OBRAS DE INFRAESTRUTURA', valor: 515134.07, percentual: 30.51 },
+                { natureza: 'COMISSÃO/INTERMEDIAÇÃO', valor: 220000.00, percentual: 13.03 },
+                { natureza: 'IPTU / ITR', valor: 173427.71, percentual: 10.27 },
+                { natureza: 'RESULTADO DE PARTIC.', valor: 168406.25, percentual: 9.97 },
+                { natureza: 'FORNEC. MAT. ELÉTRICO', valor: 82502.20, percentual: 4.89 },
+                { natureza: 'PROJETOS COMPLEMENTARES', valor: 71251.92, percentual: 4.22 },
+                { natureza: 'PROJETOS AMBIENTAIS', valor: 63238.57, percentual: 3.75 },
+                { natureza: 'EXEC. SIST. ELETRIFICAÇÃO', valor: 54106.00, percentual: 3.20 },
+                { natureza: 'PROJETOS URBANÍSTICOS', valor: 49201.84, percentual: 2.91 },
+                { natureza: 'ASSESSORIA CONTÁBIL', valor: 45154.50, percentual: 2.67 }
+            ],
+            BARILOCHE: [
+                { natureza: 'CUSTO DA ÁREA', valor: 114940.58, percentual: 45.90 },
+                { natureza: 'IPTU / ITR', valor: 36157.20, percentual: 14.44 },
+                { natureza: 'TAXAS E IMPOSTOS', valor: 28995.30, percentual: 11.58 },
+                { natureza: 'PROJETOS DE EDIFICAÇÕES', valor: 21448.47, percentual: 8.56 },
+                { natureza: 'ASSESSORIA CONTÁBIL', valor: 12590.00, percentual: 5.03 },
+                { natureza: 'SERVIÇO DE MÃO DE OBRA', valor: 12337.60, percentual: 4.93 },
+                { natureza: 'DESM. DEST. LIMPEZA', valor: 6930.00, percentual: 2.77 },
+                { natureza: 'DESPESAS LEGAIS', valor: 3503.73, percentual: 1.40 },
+                { natureza: 'FORNECIMENTO MATERIAL', valor: 2814.62, percentual: 1.12 },
+                { natureza: 'SERVIÇOS DE TOPOGRAFIA', valor: 2096.62, percentual: 0.84 }
+            ]
+        };
+
+        const formatarMoeda = (valor) => {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(valor);
+        };
+
+        let barChart, pieChart;
+
+        function createCharts(empresa) {
+            const ctx1 = document.getElementById('barChart').getContext('2d');
+            const ctx2 = document.getElementById('pieChart').getContext('2d');
+
+            if (barChart) barChart.destroy();
+            if (pieChart) pieChart.destroy();
+
+            const data = dados[empresa];
+
+            // Gráfico de Barras
+            barChart = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.natureza),
+                    datasets: [{
+                        label: 'Valor',
+                        data: data.map(d => d.valor),
+                        backgroundColor: 'rgb(59, 130, 246)',
+                        borderColor: 'rgb(37, 99, 235)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatarMoeda(value);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return formatarMoeda(context.raw);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de Pizza
+            pieChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(d => d.natureza),
+                    datasets: [{
+                        data: data.map(d => d.percentual),
+                        backgroundColor: [
+                            '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#6366F1',
+                            '#EC4899', '#8B5CF6', '#14B8A6', '#F97316', '#06B6D4'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.raw.toFixed(2)}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Atualizar tabela
+            const tabela = document.getElementById('detailTable');
+            tabela.innerHTML = '';
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.natureza}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">${formatarMoeda(item.valor)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-right">${item.percentual.toFixed(2)}%</td>
+                `;
+                tabela.appendChild(tr);
+            });
+        }
+
+        function updateCharts() {
+            const empresa = document.getElementById('empresaSelector').value;
+            createCharts(empresa);
+        }
+
+        // Inicializar com Ágata
+        createCharts('AGATA');
+    </script>
+</body>
+</html>
